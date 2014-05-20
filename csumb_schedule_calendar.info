@@ -1,0 +1,6 @@
+name = CSUMB Schedule Calendar
+description = Provides a calendar view of bookmarked sections.
+core = 7.x
+package = CSUMB
+files[] = csumb_schedule_calendar.module
+files[] = js/csumb_schedule_calendar.js

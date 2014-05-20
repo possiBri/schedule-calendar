@@ -1,0 +1,204 @@
+<?php
+
+/*
+ * Implements hook_menu().
+ */
+
+function csumb_schedule_calendar_menu() {
+  $items['schedule/calendar'] = array(
+    'title' => 'Schedule Calendar',
+    'page callback' => 'csumb_schedule_calendar_page',
+    'access callback' => TRUE,
+  );
+   $items['schedule/calendar/json'] = array(
+    'title' => 'Schedule Calendar JSON',
+    'page callback' => 'csumb_schedule_calendar_json_page',
+    'access callback' => TRUE,
+    'delivery callback' => 'drupal_json_output',
+  );
+  return $items;
+}
+
+/*
+ * Implement page callback for /schedule/calendar.
+ */
+
+function csumb_schedule_calendar_page() {
+  drupal_add_js(libraries_get_path('fullcalendar') . '/fullcalendar.min.js', array('group' => JS_LIBRARY, 'every_page' => FALSE));
+  drupal_add_css(libraries_get_path('fullcalendar') . '/fullcalendar.css');
+  drupal_add_js(drupal_get_path('module', 'csumb_schedule_calendar') . '/js/csumb_schedule_calendar.js', 'file');
+  fullcalendar_include_api();
+  return '<div id="my-calendar"></div>';
+}
+
+/*
+ * Implement page callback for /schedule/calendar/json.
+ */
+
+function csumb_schedule_calendar_json_page() {
+  header('Content-Type: application/json');
+  drupal_add_library('system', 'drupal.ajax');
+
+  // Retrieve current user's ID
+  function get_user_id() {
+    global $user;
+    return $user->uid;
+  }
+
+  $currUser = get_user_id();
+
+  $query = "SELECT node.title AS node_title, node.nid AS nid, node_field_data_field_section_term.nid AS node_field_data_field_section_term_nid, field_data_field_section_meeting_pattern.entity_id AS field_data_field_section_meeting_pattern_entity_id, field_collection_item_field_data_field_section_meeting_pattern.item_id AS meeting_id, field_collection_item_field_data_field_meeting_arranged.field_meeting_arranged_value AS arranged, field_collection_item_field_data_field_meeting_start_time.field_meeting_start_time_value AS start_time, field_collection_item_field_data_field_meeting_end_time.field_meeting_end_time_value AS end_time, field_collection_item_field_data_field_meeting_monday.field_meeting_monday_value AS monday, field_collection_item_field_data_field_meeting_tuesday.field_meeting_tuesday_value AS tuesday, field_collection_item_field_data_field_meeting_wednesday.field_meeting_wednesday_value AS wednesday, field_collection_item_field_data_field_meeting_thursday.field_meeting_thursday_value AS thursday, field_collection_item_field_data_field_meeting_friday.field_meeting_friday_value AS friday, 'node' AS field_data_field_section_course_node_entity_type, 'node' AS field_data_field_section_term_node_entity_type, 'node' AS field_data_field_semester_display_date_node_entity_type, 'node' AS field_data_field_semester_end_date_node_entity_type, 'field_collection_item' AS arranged_type, 'field_collection_item' AS start_time_type, 'field_collection_item' AS end_time_type, 'field_collection_item' AS monday_type, 'field_collection_item' AS tuesday_type, 'field_collection_item' AS wednesday_type, 'field_collection_item' AS thursday_type, 'field_collection_item' AS friday_type 
+            FROM 
+            {node} node
+            INNER JOIN {flagging} flagging_node ON node.nid = flagging_node.entity_id AND (flagging_node.fid = '1' AND flagging_node.uid = :uid)
+            LEFT JOIN {field_data_field_section_course} field_data_field_section_course ON node.nid = field_data_field_section_course.entity_id AND (field_data_field_section_course.entity_type = 'node' AND field_data_field_section_course.deleted = '0')
+            LEFT JOIN {node} node_field_data_field_section_course ON field_data_field_section_course.field_section_course_target_id = node_field_data_field_section_course.nid
+            LEFT JOIN {field_data_field_section_term} field_data_field_section_term ON node.nid = field_data_field_section_term.entity_id AND (field_data_field_section_term.entity_type = 'node' AND field_data_field_section_term.deleted = '0')
+            LEFT JOIN {node} node_field_data_field_section_term ON field_data_field_section_term.field_section_term_target_id = node_field_data_field_section_term.nid
+            LEFT JOIN {field_data_field_section_meeting_pattern} field_data_field_section_meeting_pattern ON node.nid = field_data_field_section_meeting_pattern.entity_id AND (field_data_field_section_meeting_pattern.entity_type = 'node' AND field_data_field_section_meeting_pattern.deleted = '0')
+            LEFT JOIN {field_data_field_meeting_arranged} field_collection_item_field_data_field_meeting_arranged ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_arranged.entity_id 
+            LEFT JOIN {field_data_field_meeting_start_time} field_collection_item_field_data_field_meeting_start_time ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_start_time.entity_id
+            LEFT JOIN {field_data_field_meeting_end_time} field_collection_item_field_data_field_meeting_end_time ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_end_time.entity_id
+            LEFT JOIN {field_data_field_meeting_monday} field_collection_item_field_data_field_meeting_monday ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_monday.entity_id
+            LEFT JOIN {field_data_field_meeting_tuesday} field_collection_item_field_data_field_meeting_tuesday ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_tuesday.entity_id
+            LEFT JOIN {field_data_field_meeting_wednesday} field_collection_item_field_data_field_meeting_wednesday ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_wednesday.entity_id
+            LEFT JOIN {field_data_field_meeting_thursday} field_collection_item_field_data_field_meeting_thursday ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_thursday.entity_id
+            LEFT JOIN {field_data_field_meeting_friday} field_collection_item_field_data_field_meeting_friday ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_meeting_friday.entity_id
+            LEFT JOIN {field_collection_item} field_collection_item_field_data_field_section_meeting_pattern ON field_data_field_section_meeting_pattern.field_section_meeting_pattern_value = field_collection_item_field_data_field_section_meeting_pattern.item_id
+            LEFT JOIN {field_data_field_semester_display_date} node_field_data_field_section_term__field_data_field_semester_display_date ON node_field_data_field_section_term.nid = node_field_data_field_section_term__field_data_field_semester_display_date.entity_id AND (node_field_data_field_section_term__field_data_field_semester_display_date.entity_type = 'node' AND node_field_data_field_section_term__field_data_field_semester_display_date.deleted = '0')
+            LEFT JOIN {field_data_field_semester_end_date} node_field_data_field_section_term__field_data_field_semester_end_date ON node_field_data_field_section_term.nid = node_field_data_field_section_term__field_data_field_semester_end_date.entity_id AND (node_field_data_field_section_term__field_data_field_semester_end_date.entity_type = 'node' AND node_field_data_field_section_term__field_data_field_semester_end_date.deleted = '0')
+            WHERE (( (node.status = '1') AND (node.type IN  ('section')) )AND( (field_collection_item_field_data_field_section_meeting_pattern.item_id=field_data_field_section_meeting_pattern.field_section_meeting_pattern_value) )AND( (DATE_FORMAT(node_field_data_field_section_term__field_data_field_semester_display_date.field_semester_display_date_value, '%Y-%m-%d') <= '2014-03-20') AND (DATE_FORMAT(node_field_data_field_section_term__field_data_field_semester_end_date.field_semester_end_date_value, '%Y-%m-%d') >= '2014-03-20') ))
+            ORDER BY node_title ASC";
+  
+  $result = db_query($query, array(':uid' => $currUser));
+  $records = $result->fetchAll();
+
+  // Make dates relative to now and in ISO format
+  $mon = gmdate("Y-m-d", strtotime("monday next week - 1 week"));
+  $tue = gmdate("Y-m-d", strtotime("monday next week - 6 days"));
+  $wed = gmdate("Y-m-d", strtotime("monday next week - 5 days"));
+  $thu = gmdate("Y-m-d", strtotime("monday next week - 4 days"));
+  $fri = gmdate("Y-m-d", strtotime("monday next week - 3 days"));
+
+  // Create array to insert events into
+  $eventHolder = array();
+  $k = 0; //to set color
+
+  foreach ($records as $record){
+    // Make times from query in ISO format
+    $startTime = gmdate("H:i", ($record->start_time));
+    $endTime = gmdate("H:i", ($record->end_time));
+
+    // General node info from query
+    $nid = $record->nid;
+  	$title = $record->node_title;
+    $link = url('node/'.$nid);
+    $arranged = $record->arranged;
+    $monday = $record->monday;
+    $tuesday = $record->tuesday;
+    $wednesday = $record->wednesday;
+    $thursday = $record->thursday;
+    $friday = $record->friday;
+
+    ///////// Logic to add dates/times to event array
+     
+    // Set Start and End Date/Time for each day (when applicable)
+    if ($monday==1 || $tuesday==1 || $wednesday==1 || $thursday==1 || $friday==1){
+      $startM = $mon. "T" .$startTime;
+      $endM = $mon. "T" .$endTime;
+      $startT = $tue. "T" .$startTime;
+      $endT = $tue. "T" .$endTime;
+      $startW = $wed. "T" .$startTime;
+      $endW = $wed. "T" .$endTime;
+      $startR = $thu. "T" .$startTime;
+      $endR = $thu. "T" .$endTime;
+      $startF = $fri. "T" .$startTime;
+      $endF = $fri. "T" .$endTime;
+    }
+
+    // Insert Start and End Date/Time into event array
+    $event = array();
+    $added = array(
+      0 => 0,
+      1 => 0,
+      2 => 0,
+      3 => 0,
+      4 => 0,
+      5 => 0,
+    );
+    $color = array(
+      0 => 'blue',
+      1 => 'orange',
+      2 => 'green',
+      3 => 'black',
+      4 => 'red',
+      5 => 'purple',
+      6 => 'magenta',
+      7 => 'gold',
+    );
+    
+    
+
+    for ($i = 0; $i < 6; $i++){
+      if ($monday && $added[0] != 1){
+          $event[0]['title'] = $title;
+          $event[0]['url'] = $link; 
+          $event[0]['start'] = $startM;
+          $event[0]['end'] = $endM;
+          $event[0]['color'] = $color[$k];
+          $added[0] = 1;
+      } 
+      if ($tuesday && $added[1] != 2){
+          $event[1]['title'] = $title;
+          $event[1]['url'] = $link; 
+          $event[1]['start'] = $startT;
+          $event[1]['end'] = $endT;
+          $event[1]['color'] = $color[$k];
+          $added[1] = 2;
+      } 
+      if ($wednesday && $added[2] != 3){
+          $event[2]['title'] = $title;
+          $event[2]['url'] = $link; 
+          $event[2]['start'] = $startW;
+          $event[2]['end'] = $endW;
+          $event[2]['color'] = $color[$k];
+          $added[2] = 3;
+      }
+      if ($thursday && $added[3] != 4){
+          $event[3]['title'] = $title;
+          $event[3]['url'] = $link; 
+          $event[3]['start'] = $startR;
+          $event[3]['end'] = $endR;
+          $event[3]['color'] = $color[$k];
+          $added[3] = 4;
+      } 
+      if ($friday && $added[4] != 5){
+          $event[4]['title'] = $title;
+          $event[4]['url'] = $link; 
+          $event[4]['start'] = $startF;
+          $event[4]['end'] = $endF;
+          $event[4]['color'] = $color[$k];
+          $added[4] = 5;
+      } 
+      if ($arranged && $added[5] != 6) {
+          $event[5]['title'] = $title;
+          $event[5]['url'] = $link; 
+          $event[5]['start'] = "arranged";
+          $event[5]['end'] = "arranged";
+          $added[5] = 6;
+          break;
+      }
+      
+    }
+    $k++;
+    // Insert event into events array
+    $arrayHolder[] = array_merge($eventHolder, $event);
+    
+  }
+  // Merge events into one array
+  $events = call_user_func_array('array_merge', $arrayHolder);
+
+  echo drupal_json_encode($events);
+  drupal_exit();
+} 
+
